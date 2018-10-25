@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.*;
+import java.util.regex.*;
 
 public class CongressionalSpeechExtractor {
 	public static void processFiles() {
@@ -8,12 +9,15 @@ public class CongressionalSpeechExtractor {
 		final int NUM_FILENAME_PREFIX_CHARS = 5;	//"CREC-"
 		final int FILENAME_EXTENSION_CHAR_COUNT = 4;	//".txt"
 		
+		Matcher regexMatch;
+		Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) *[A-Z-]*(?: *[A-Z-]*)*)(?:\\.)");
+
+
 		ArrayList<File> inputFiles = new ArrayList<File>(Arrays.asList(new File(INPUT_DIR).listFiles()));
 		BufferedReader reader = null;
 		PrintWriter writer = null;
 		for(int i=0; i<inputFiles.size(); i++){
 			try {
-//				reader = new BufferedReader(new FileReader(inputFiles.get(i)));
 				reader = new BufferedReader( new InputStreamReader( new FileInputStream(inputFiles.get(i)), "UTF8"));
 				String rawFileName = inputFiles.get(i).getName(); 
 				String date = rawFileName .substring(NUM_FILENAME_PREFIX_CHARS, rawFileName.length() -FILENAME_EXTENSION_CHAR_COUNT);
@@ -36,44 +40,39 @@ public class CongressionalSpeechExtractor {
 				String line = reader.readLine();	//assume 1st 2 lines are skippable & 2 lines exist
 				int j=2;		//line numbers start from 1 & previousLine uses up line 1
 				for(; line != null && j<1000000000; previousLine=line, line=reader.readLine(), j++){
-					boolean isPreviousLineEndOfSentence  = false;
-					if(previousLine.length()>0){
-						isPreviousLineEndOfSentence = previousLine.substring(previousLine.length()-1).matches("[\\.\\?!\\)]");	//end of sentence = . ? ! ) 
-					}
-
 					if(line.isEmpty()){		//skip empty lines
 						continue;
 					}
-
-					String[] words = line.split(" ");	//split line on spaces
-					boolean titleDetected=false;
-					if(words.length>=2){	//in case line is 1 thing long
-						titleDetected = line.matches("(?i:^((Mr\\.)|(Ms\\.)).*)") && isUpperCase(words[1]) && isPreviousLineEndOfSentence;		//line starting with Mr. or Ms. with any text afterwards    (?i:X) is for case insensitive
-					}
-					boolean clerkDetected = line.matches("(?i:^(The *CLERK).*)");	//"The CLERK" as start of line & anything afterwards
 					
-					if(line.matches("(?i:SWEARING IN OF MEMBERS.*)")){
+					String[] words = line.split(" ");	//split line on spaces
+					
+					regexMatch = speakerNamePattern.matcher(line);
+					boolean titleDetected=false;
+					if(regexMatch.find()){
+						speakerName = regexMatch.group(1);
+						titleDetected = true;
+					}
+					
+					boolean clerkDetected = line.matches("(?i:^The *CLERK\\..*)");	//"The CLERK" as start of line & anything afterwards
+					
+					//line.matches("(?i:)")
+					if(line.matches("f") || line.matches("(?i:The Clerk read.*)") || line.matches("(?i:^\\[Roll .*)") || line.matches("(?i:SWEARING IN OF MEMBERS.*)") || line.matches("(?i:MAJORITY LEADER.*)") || line.matches("(?i:MINORITY LEADER.*)") || line.matches("(?i:MAJORITY WHIP.*)") || line.matches("(?i:AMENDMENT OFFERED BY.*)")){
 						specialTermination = true;
 					}
 					if(speechStarted && (clerkDetected || titleDetected || specialTermination)){	//speech ended, write to file
 						allSpeechesForDay.append(speech.toString());
 						speech.setLength(0);
-						specialTermination = false;
 						speechStarted = false;
 					}
-					if(specialTermination){
-						int a=2;
-					}
+					specialTermination= false;
 
 					if(titleDetected){	//end current speech & start new
 						speechStarted = true;
-						speakerName = extractSpeakerNameAndOptionalState(words);
 						speechCount++;
 						speech.append("\n\tSpeech #"+speechCount + " " + speakerName +"\n");
 						speech.append(line+"\n");
 					}
 					else if(speechStarted){
-						
 						if(line.split(" ")[0].matches("(?i:VerDate)")){
 							//skip 3 column page breaks with dates
 							for(; !line.split(" ")[0].matches("(?i:Jkt)"); previousLine=line, line=reader.readLine(), j++){
@@ -84,16 +83,20 @@ public class CongressionalSpeechExtractor {
 							for(int k=0; k<5; previousLine=line, line=reader.readLine(), j++, k++){
 							}
 						}
+						else if(line.matches("(?i:^PO 0.*)")){
+							for(; !line.matches("(?i:^Sfmt.*)"); previousLine=line, line=reader.readLine(), j++){
+							}
+						}
 						else {	//normal line
 							speech.append(line+"\n");
 						}
-					}					
+					}
 
 				}
 				
 				System.out.println(allSpeechesForDay.toString());
 				try {
-					writer = new PrintWriter(OUTPUT_DIR + date + "/" + "asdf.txt", "UTF-8");
+					writer = new PrintWriter(folder + "/" + "asdf.txt", "UTF-8");
 					writer.println(allSpeechesForDay.toString());
 				} catch (Exception e) {
 					e.printStackTrace();
