@@ -106,7 +106,7 @@ public class CongressionalSpeechExtractor {
 
 				}
 				
-				System.out.println(allSpeechesForDay.toString());
+				System.out.println("All Speeches Length="+allSpeechesForDay.length());
 				try {
 					writer = new PrintWriter(folder + "/" + "asdf.txt", "UTF-8");
 					writer.println(allSpeechesForDay.toString());
