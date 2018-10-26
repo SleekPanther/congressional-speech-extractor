@@ -37,11 +37,11 @@ public class CongressionalSpeechExtractor {
 				boolean speechStarted=false;
 				boolean specialTermination = false;
 				
-				String previousLine = reader.readLine();
 				String line = reader.readLine();	//assume 1st 2 lines are skippable & 2 lines exist
-				int j=2;		//line numbers start from 1 & previousLine uses up line 1
-				for(; line != null && j<1000000000; previousLine=line, line=reader.readLine(), j++){
-					if(line.isEmpty()){		//skip empty lines
+				int j=1;		//line numbers start from 1
+				for(; line != null && j<1000000000; line=reader.readLine(), j++){
+					if(line.isEmpty()
+						|| line.matches("(?i:SCOATES on DSK6SPTVN1PROD with CONG-REC-ONLINE)") ){
 						continue;
 					}
 					
@@ -51,16 +51,18 @@ public class CongressionalSpeechExtractor {
 						speakerName = regexMatch.group(1);
 						titleDetected = true;
 						if(regexMatch.group(2) != null){	//2nd capture group is optional "of"
+							//concat next line in case long name and state
+							line += " " + reader.readLine();
+							j++;
 							String restOfLine = line.substring(speakerName.length()+3);	//" of" = 3 characters
 							speakerName += " of " + extractState(restOfLine);
 						}
 					}
 					
-					boolean clerkDetected = line.matches("(?i:^The *CLERK\\..*)");	//"The CLERK" as start of line & anything afterwards
-					
 					if(line.matches("f") 
 						|| line.matches("(?i:The Clerk read.*)")
-						|| line.matches("(?i:The SPEAKER.*)")
+						|| line.matches("(?i:^The *CLERK\\..*)")
+						|| line.matches("(?i:The SPEAKER\\..*)")
 						|| line.matches("(?i:^\\[Roll .*)")
 						|| line.matches("(?i:SWEARING IN OF MEMBERS.*)")
 						|| line.matches("(?i:MAJORITY LEADER.*)")
@@ -69,7 +71,7 @@ public class CongressionalSpeechExtractor {
 						|| line.matches("(?i:AMENDMENT OFFERED BY.*)")){
 						specialTermination = true;
 					}
-					if(speechStarted && (clerkDetected || titleDetected || specialTermination)){	//speech ended, write to file
+					if(speechStarted && (titleDetected || specialTermination)){	//speech ended, write to file
 						allSpeechesForDay.append(speech.toString());
 						speech.setLength(0);
 						speechStarted = false;
@@ -86,16 +88,16 @@ public class CongressionalSpeechExtractor {
 					else if(speechStarted){
 						if(line.split(" ")[0].matches("(?i:VerDate)")){
 							//skip 3 column page breaks with dates
-							for(; !line.split(" ")[0].matches("(?i:Jkt)"); previousLine=line, line=reader.readLine(), j++){
+							for(; !line.split(" ")[0].matches("(?i:Jkt)"); line=reader.readLine(), j++){
 							}
 						}
 						else if(line.matches("^([A-Z]:).*")){	//Starts with E: or other capital		E:\RECORD15\H06JA5.REC
 							//Skip 5 lines
-							for(int k=0; k<5; previousLine=line, line=reader.readLine(), j++, k++){
+							for(int k=0; k<5; line=reader.readLine(), j++, k++){
 							}
 						}
-						else if(line.matches("(?i:^PO 0.*)")){
-							for(; !line.matches("(?i:^Sfmt.*)"); previousLine=line, line=reader.readLine(), j++){
+						else if(line.matches("(?i:^PO 0\\d*.*)")){	//PO 00000 etc. 	column breaks
+							for(; !line.matches("(?i:^Sfmt.*)"); line=reader.readLine(), j++){
 							}
 						}
 						else {	//normal line
@@ -106,9 +108,9 @@ public class CongressionalSpeechExtractor {
 
 				}
 				
-				System.out.println("All Speeches Length="+allSpeechesForDay.length());
+				System.out.println("Done");
 				try {
-					writer = new PrintWriter(folder + "/" + "asdf.txt", "UTF-8");
+					writer = new PrintWriter(folder + "/" + date+".txt", "UTF-8");
 					writer.println(allSpeechesForDay.toString());
 				} catch (Exception e) {
 					e.printStackTrace();
