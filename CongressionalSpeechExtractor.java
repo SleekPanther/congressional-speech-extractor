@@ -10,7 +10,8 @@ public class CongressionalSpeechExtractor {
 		final int FILENAME_EXTENSION_CHAR_COUNT = 4;	//".txt"
 		
 		Matcher regexMatch;
-		Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) *[A-Z-]*(?: *[A-Z-]*)*)(?:\\.)");
+		// Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) *[A-Z-]*(?: *[A-Z-]*)*)(?:(?:\\.)|( *[oO][fF]))");	//doesn't work for optional 2nd capture group
+		Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) *[A-Z-]*(?: *[A-Z-]*)*)(?:(?:\\.)|( *[oO][fF]))");
 
 
 		ArrayList<File> inputFiles = new ArrayList<File>(Arrays.asList(new File(INPUT_DIR).listFiles()));
@@ -44,19 +45,28 @@ public class CongressionalSpeechExtractor {
 						continue;
 					}
 					
-					String[] words = line.split(" ");	//split line on spaces
-					
 					regexMatch = speakerNamePattern.matcher(line);
 					boolean titleDetected=false;
 					if(regexMatch.find()){
 						speakerName = regexMatch.group(1);
 						titleDetected = true;
+						if(regexMatch.group(2) != null){	//2nd capture group is optional "of"
+							String restOfLine = line.substring(speakerName.length()+3);	//" of" = 3 characters
+							speakerName += " of " + extractState(restOfLine);
+						}
 					}
 					
 					boolean clerkDetected = line.matches("(?i:^The *CLERK\\..*)");	//"The CLERK" as start of line & anything afterwards
 					
-					//line.matches("(?i:)")
-					if(line.matches("f") || line.matches("(?i:The Clerk read.*)") || line.matches("(?i:^\\[Roll .*)") || line.matches("(?i:SWEARING IN OF MEMBERS.*)") || line.matches("(?i:MAJORITY LEADER.*)") || line.matches("(?i:MINORITY LEADER.*)") || line.matches("(?i:MAJORITY WHIP.*)") || line.matches("(?i:AMENDMENT OFFERED BY.*)")){
+					if(line.matches("f") 
+						|| line.matches("(?i:The Clerk read.*)")
+						|| line.matches("(?i:The SPEAKER.*)")
+						|| line.matches("(?i:^\\[Roll .*)")
+						|| line.matches("(?i:SWEARING IN OF MEMBERS.*)")
+						|| line.matches("(?i:MAJORITY LEADER.*)")
+						|| line.matches("(?i:MINORITY LEADER.*)")
+						|| line.matches("(?i:MAJORITY WHIP.*)")
+						|| line.matches("(?i:AMENDMENT OFFERED BY.*)")){
 						specialTermination = true;
 					}
 					if(speechStarted && (clerkDetected || titleDetected || specialTermination)){	//speech ended, write to file
@@ -71,6 +81,7 @@ public class CongressionalSpeechExtractor {
 						speechCount++;
 						speech.append("\n\tSpeech #"+speechCount + " " + speakerName +"\n");
 						speech.append(line+"\n");
+						// speech.append(j+": "+line+"\n");
 					}
 					else if(speechStarted){
 						if(line.split(" ")[0].matches("(?i:VerDate)")){
@@ -89,6 +100,7 @@ public class CongressionalSpeechExtractor {
 						}
 						else {	//normal line
 							speech.append(line+"\n");
+							// speech.append(j+": "+line+"\n");
 						}
 					}
 
@@ -127,23 +139,16 @@ public class CongressionalSpeechExtractor {
 		return string.equals(string.toUpperCase());
 	}
 
-	//TODO = deal with periods after names?
-	private static String extractSpeakerNameAndOptionalState(String[] words) {
-		String speakerName = words[0] + " " + words[1];
-		if(words[2].matches("(?i:of)")){
-			if(isState(words[3])){
-				speakerName += " of " + words[3];
-			}
-			else if(isState(words[3] + " " + words[4])){
-				speakerName += " of " + words[3] + " " + words[4];
-			}
-			else{
-				speakerName += " NO STATE FOUND";
-			}
-			//more cases if states names are > 2 words
+	private static String extractState(String endOfLine) {
+		String state = endOfLine;
+		int periodIndex = endOfLine.indexOf(".");
+		if(periodIndex>1){
+			state = endOfLine.substring(0, periodIndex);
+			int a=2;
 		}
-		// System.out.println("Speaker="+speakerName);
-		return speakerName;
+		//else if no period is found, assume end of line is enough of the state (long names/states)
+
+		return state;
 	}
 
 	//states with more than 2 words?
