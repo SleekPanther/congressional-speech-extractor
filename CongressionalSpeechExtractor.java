@@ -41,7 +41,7 @@ public class CongressionalSpeechExtractor {
 				int j=1;		//line numbers start from 1
 				for(; line != null && j<1000000000; line=reader.readLine(), j++){
 					if(line.isEmpty()
-						|| line.matches("(?i:SCOATES on DSK6SPTVN1PROD with CONG-REC-ONLINE)") ){
+						|| line.matches("(?i:.*CONG-REC-ONLINE.*)") ){
 						continue;
 					}
 					
@@ -63,7 +63,8 @@ public class CongressionalSpeechExtractor {
 						|| line.matches("(?i:The Clerk read.*)")
 						|| line.matches("(?i:^The *CLERK\\..*)")
 						|| line.matches("(?i:The SPEAKER\\..*)")
-						|| line.matches("(?i:^\\[Roll .*)")
+						|| line.matches("(?i:^\\[Roll.*)")
+						|| line.matches("(?i:^\\[Quorum.*)")
 						|| line.matches("(?i:SWEARING IN OF MEMBERS.*)")
 						|| line.matches("(?i:MAJORITY LEADER.*)")
 						|| line.matches("(?i:MINORITY LEADER.*)")
