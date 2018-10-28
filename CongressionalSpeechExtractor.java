@@ -109,15 +109,7 @@ public class CongressionalSpeechExtractor {
 				}
 				
 				System.out.println("Done");
-				try {
-					writer = new PrintWriter(folder + "/" + date+".txt", "UTF-8");
-					writer.println(allSpeechesForDay.toString());
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				finally{
-					writer.close();
-				}
+				CongressionalSpeechExtractor.writeToFile(writer, folder + "/" + date+".txt",  allSpeechesForDay.toString());
 
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -153,12 +145,17 @@ public class CongressionalSpeechExtractor {
 		return state;
 	}
 
-	//states with more than 2 words?
-	private static ArrayList<String> states = new ArrayList<String>(Arrays.asList(new String[]{"alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming", 
-		"district of columbia", "puerto rico", "guam", "american samoa", "u.s. virgin islands", "northern mariana islands"}));
-	private static boolean isState(String state) {
-		state = state.toLowerCase();
-		return states.contains(state);
+	private static void writeToFile(PrintWriter writer, String path, String contents){
+		try {
+			writer = new PrintWriter(path);
+			writer.println(contents);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally{
+			writer.close();
+		}
 	}
 
 	public static void main(String[] args) {
