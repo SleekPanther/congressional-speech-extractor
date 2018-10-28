@@ -7,7 +7,7 @@ public class CongressionalSpeechExtractor {
 		final String INPUT_DIR = "input/";
 		final String OUTPUT_DIR = "output/";
 		final int NUM_FILENAME_PREFIX_CHARS = 5;	//"CREC-"
-		final int FILENAME_EXTENSION_CHAR_COUNT = 4;	//".txt"
+		final int DATE_CHAR_COUNT = 9;	//"yyyy-mm-dd"
 		
 		Matcher regexMatch;
 		// Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) *[A-Z-]*(?: *[A-Z-]*)*)(?:(?:\\.)|( *[oO][fF]))");	//doesn't work for optional 2nd capture group
@@ -21,7 +21,7 @@ public class CongressionalSpeechExtractor {
 			try {
 				reader = new BufferedReader( new InputStreamReader( new FileInputStream(inputFiles.get(i)), "UTF8"));
 				String rawFileName = inputFiles.get(i).getName(); 
-				String date = rawFileName .substring(NUM_FILENAME_PREFIX_CHARS, rawFileName.length() -FILENAME_EXTENSION_CHAR_COUNT);
+				String date = rawFileName .substring(NUM_FILENAME_PREFIX_CHARS, NUM_FILENAME_PREFIX_CHARS+DATE_CHAR_COUNT+1);
 				
 				File folder = new File(OUTPUT_DIR + date);
 				if(!folder.exists()){
