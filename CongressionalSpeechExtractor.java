@@ -92,7 +92,7 @@ public class CongressionalSpeechExtractor {
 					if(titleDetected){	//end current speech & start new
 						speechStarted = true;
 						speechCount++;
-						speech.append("\n\tSpeech #"+speechCount + " " + speakerName +"\n");
+						speech.append("\n\tSpeech #"+CongressionalSpeechExtractor.leftPadNumber(speechCount) + " " + speakerName +"\n");
 						speech.append(line+"\n");
 						// speech.append(j+": "+line+"\n");
 					}
@@ -156,6 +156,14 @@ public class CongressionalSpeechExtractor {
 		//else if no period is found, assume end of line is enough of the state (long names/states)
 
 		return state;
+	}
+
+	private static String leftPadNumber(int number){
+		return leftPadNumber(number, 4);
+	}
+	private static String leftPadNumber(int number, int desiredLength){
+		int numPaddingZeros = desiredLength - (number+"").length();
+		return String.join("", Collections.nCopies(numPaddingZeros, "0")) + number;
 	}
 
 	private static void writeToFile(PrintWriter writer, String path, String contents){
