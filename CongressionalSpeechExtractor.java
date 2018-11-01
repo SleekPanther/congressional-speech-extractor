@@ -10,7 +10,7 @@ public class CongressionalSpeechExtractor {
 		final int FILENAME_EXTENSION_CHAR_COUNT = 4;	//".txt"
 		
 		Matcher regexMatch;
-		Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) *[A-Z-]*(?: *[A-Z-]*)*)(?:(?:\\.)|( *[oO][fF]))");
+		final Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) *[A-Z-]*(?: *[A-Z-]*)*)(?:(?:\\.)|( *[oO][fF]))");
 
 
 		ArrayList<File> inputFiles = new ArrayList<File>(Arrays.asList(new File(INPUT_DIR).listFiles()));
@@ -38,8 +38,8 @@ public class CongressionalSpeechExtractor {
 				
 				String line = reader.readLine();	//assume 1st 2 lines are skippable & 2 lines exist
 				int j=1;		//line numbers start from 1
-				for(; line != null && j<1000000000; line=reader.readLine(), j++){
-					//	<0x0c> form feed \f character cleanup
+				for(; line != null; line=reader.readLine(), j++){
+					//	<0x0c> \f	unreadable form feed character cleanup
 					if(line.length()>=1 && line.substring(0,1).equals("\f")){
 						line=line.substring(1, line.length());
 					}
@@ -66,7 +66,7 @@ public class CongressionalSpeechExtractor {
 						}
 					}
 					
-					if(	   line.matches("f") 
+					if(	   line.matches("f")	//strange horizontal diamon in PDF
 						|| line.matches("(?i:The Clerk read.*)")
 						|| line.matches("(?i:^The *CLERK\\..*)")
 						|| line.matches("(?i:The SPEAKER\\..*)")
@@ -119,7 +119,7 @@ public class CongressionalSpeechExtractor {
 				}
 				
 				System.out.println("Done");
-				CongressionalSpeechExtractor.writeToFile(writer, folder + "/" + date+".txt",  allSpeechesForDay.toString());
+				CongressionalSpeechExtractor.writeToFile(writer, folder + "/" + date+".txt", allSpeechesForDay.toString());
 
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -134,7 +134,6 @@ public class CongressionalSpeechExtractor {
 					e.printStackTrace();
 				}
 			}
-//			System.out.println(inputFiles.get(i).getName());
 		}
 
 	}
@@ -157,14 +156,6 @@ public class CongressionalSpeechExtractor {
 		return state;
 	}
 
-	private static String leftPadNumber(int number){
-		return leftPadNumber(number, 4);
-	}
-	private static String leftPadNumber(int number, int desiredLength){
-		int numPaddingZeros = desiredLength - (number+"").length();
-		return String.join("", Collections.nCopies(numPaddingZeros, "0")) + number;
-	}
-
 	private static void writeToFile(PrintWriter writer, String path, String contents){
 		try {
 			writer = new PrintWriter(path);
@@ -177,6 +168,15 @@ public class CongressionalSpeechExtractor {
 			writer.close();
 		}
 	}
+
+	private static String leftPadNumber(int number){
+		return leftPadNumber(number, 4);
+	}
+	private static String leftPadNumber(int number, int desiredLength){
+		int numPaddingZeros = desiredLength - (number+"").length();
+		return String.join("", Collections.nCopies(numPaddingZeros, "0")) + number;
+	}
+	
 
 	public static void main(String[] args) {
 		CongressionalSpeechExtractor.processFiles();
