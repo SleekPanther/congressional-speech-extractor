@@ -40,6 +40,11 @@ public class CongressionalSpeechExtractor {
 				String line = reader.readLine();	//assume 1st 2 lines are skippable & 2 lines exist
 				int j=1;		//line numbers start from 1
 				for(; line != null && j<1000000000; line=reader.readLine(), j++){
+					//	<0x0c> form feed \f character cleanup
+					if(line.length()>=1 && line.substring(0,1).equals("\f")){
+						line=line.substring(1, line.length());
+					}
+					
 					if(	   line.isEmpty()
 						|| (isUpperCase(line) && !line.matches("(?i:^PO 0\\d*.*)"))
 						|| line.matches("(?i:^(?:January|February|March|April|May|June|July|August|September|October|November|December) \\d.*)")	//any date not caught with VerDate
