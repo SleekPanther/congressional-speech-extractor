@@ -41,7 +41,7 @@ public class CongressionalSpeechExtractor {
 				int j=1;		//line numbers start from 1
 				for(; line != null && j<1000000000; line=reader.readLine(), j++){
 					if(	   line.isEmpty()
-						|| isUpperCase(line)
+						|| (isUpperCase(line) && !line.matches("(?i:^PO 0\\d*.*)"))
 						|| line.matches("(?i:^(?:January|February|March|April|May|June|July|August|September|October|November|December) \\d.*)")	//any date not caught with VerDate
 						|| line.matches("(?i:.*CONG-REC-ONLINE.*)")
 						){
@@ -92,9 +92,9 @@ public class CongressionalSpeechExtractor {
 						// speech.append(j+": "+line+"\n");
 					}
 					else if(speechStarted){
-						if(line.split(" ")[0].matches("(?i:VerDate)")){
+						if(line.matches("(?i:^VerDate.*)")){
 							//skip 3 column page breaks with dates
-							for(; !line.split(" ")[0].matches("(?i:Jkt)"); line=reader.readLine(), j++){
+							for(; !line.matches("(?i:^Jkt.*)"); line=reader.readLine(), j++){
 							}
 						}
 						else if(line.matches("^([A-Z]:).*")){	//Starts with E: or other capital		E:\RECORD15\H06JA5.REC
