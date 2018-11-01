@@ -7,10 +7,9 @@ public class CongressionalSpeechExtractor {
 		final String INPUT_DIR = "input/";
 		final String OUTPUT_DIR = "output/";
 		final int NUM_FILENAME_PREFIX_CHARS = 5;	//"CREC-"
-		final int DATE_CHAR_COUNT = 9;	//"yyyy-mm-dd"
+		final int FILENAME_EXTENSION_CHAR_COUNT = 4;	//".txt"
 		
 		Matcher regexMatch;
-		// Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) *[A-Z-]*(?: *[A-Z-]*)*)(?:(?:\\.)|( *[oO][fF]))");	//doesn't work for optional 2nd capture group
 		Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) *[A-Z-]*(?: *[A-Z-]*)*)(?:(?:\\.)|( *[oO][fF]))");
 
 
@@ -21,7 +20,7 @@ public class CongressionalSpeechExtractor {
 			try {
 				reader = new BufferedReader( new InputStreamReader( new FileInputStream(inputFiles.get(i)), "UTF8"));
 				String rawFileName = inputFiles.get(i).getName(); 
-				String date = rawFileName .substring(NUM_FILENAME_PREFIX_CHARS, NUM_FILENAME_PREFIX_CHARS+DATE_CHAR_COUNT+1);
+				String date = rawFileName .substring(NUM_FILENAME_PREFIX_CHARS, rawFileName.length() -FILENAME_EXTENSION_CHAR_COUNT);
 				
 				File folder = new File(OUTPUT_DIR + date);
 				if(!folder.exists()){
@@ -47,7 +46,7 @@ public class CongressionalSpeechExtractor {
 					
 					if(	   line.isEmpty()
 						|| (isUpperCase(line) && !line.matches("(?i:^PO 0\\d*.*)"))
-						|| line.matches("(?i:^(?:January|February|March|April|May|June|July|August|September|October|November|December) \\d.*)")	//any date not caught with VerDate
+						|| line.matches("(?i:^(?:January|February|March|April|May|June|July|August|September|October|November|December) \\d.*)")		//any date not caught with VerDate
 						|| line.matches("(?i:.*CONG-REC-ONLINE.*)")
 						){
 						continue;
