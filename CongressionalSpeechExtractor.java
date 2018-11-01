@@ -10,7 +10,7 @@ public class CongressionalSpeechExtractor {
 		final int FILENAME_EXTENSION_CHAR_COUNT = 4;	//".txt"
 		
 		Matcher regexMatch;
-		final Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) *[A-Z-]*(?: *[A-Z-]*)*)(?:(?:\\.)|( *[oO][fF]))");
+		final Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) +[A-Z-]*(?: +[A-Z-]*)*)(?:(?:\\. )|( *[oO][fF]))");
 
 
 		ArrayList<File> inputFiles = new ArrayList<File>(Arrays.asList(new File(INPUT_DIR).listFiles()));
@@ -68,14 +68,25 @@ public class CongressionalSpeechExtractor {
 					regexMatch = speakerNamePattern.matcher(line);
 					boolean titleDetected=false;
 					if(regexMatch.find()){
-						speakerName = regexMatch.group(1);
-						titleDetected = true;
+						
+						
+						
+
 						if(regexMatch.group(2) != null){	//2nd capture group is optional "of"
 							//concat next line in case long name and state
 							line += " " + reader.readLine();
 							j++;
 							String restOfLine = line.substring(speakerName.length()+3);	//" of" = 3 characters
-							speakerName += " of " + extractState(restOfLine);
+							int periodIndex = restOfLine.indexOf(".");
+							int commaIndex = restOfLine.indexOf(",");
+							if(periodIndex < commaIndex){
+								speakerName = regexMatch.group(1) + " of " + extractState(restOfLine);
+								titleDetected = true;
+							}
+						}
+						else{
+							speakerName = regexMatch.group(1);
+							titleDetected = true;
 						}
 					}
 					
