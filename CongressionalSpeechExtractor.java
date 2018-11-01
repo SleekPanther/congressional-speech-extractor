@@ -40,8 +40,11 @@ public class CongressionalSpeechExtractor {
 				String line = reader.readLine();	//assume 1st 2 lines are skippable & 2 lines exist
 				int j=1;		//line numbers start from 1
 				for(; line != null && j<1000000000; line=reader.readLine(), j++){
-					if(line.isEmpty()
-						|| line.matches("(?i:.*CONG-REC-ONLINE.*)") ){
+					if(	   line.isEmpty()
+						|| isUpperCase(line)
+						|| line.matches("(?i:^(?:January|February|March|April|May|June|July|August|September|October|November|December) \\d.*)")	//any date not caught with VerDate
+						|| line.matches("(?i:.*CONG-REC-ONLINE.*)")
+						){
 						continue;
 					}
 					
@@ -59,12 +62,14 @@ public class CongressionalSpeechExtractor {
 						}
 					}
 					
-					if(line.matches("f") 
+					if(	   line.matches("f") 
 						|| line.matches("(?i:The Clerk read.*)")
 						|| line.matches("(?i:^The *CLERK\\..*)")
 						|| line.matches("(?i:The SPEAKER\\..*)")
 						|| line.matches("(?i:^\\[Roll.*)")
 						|| line.matches("(?i:^\\[Quorum.*)")
+						|| line.matches("(?i:^ADJOURNMENT.*)")
+						|| line.matches("(?i:^The PRESIDING OFFICER\\..*)")
 						|| line.matches("(?i:SWEARING IN OF MEMBERS.*)")
 						|| line.matches("(?i:MAJORITY LEADER.*)")
 						|| line.matches("(?i:MINORITY LEADER.*)")
@@ -131,6 +136,9 @@ public class CongressionalSpeechExtractor {
 	}
 	
 	private static boolean isUpperCase(String string) {
+		if(string.length()>=5 && string.substring(0, 5).equalsIgnoreCase("SEC. ")){		//SEC. lll. 	hack
+			return true;
+		}
 		return string.equals(string.toUpperCase());
 	}
 
@@ -139,7 +147,6 @@ public class CongressionalSpeechExtractor {
 		int periodIndex = endOfLine.indexOf(".");
 		if(periodIndex>1){
 			state = endOfLine.substring(0, periodIndex);
-			int a=2;
 		}
 		//else if no period is found, assume end of line is enough of the state (long names/states)
 
