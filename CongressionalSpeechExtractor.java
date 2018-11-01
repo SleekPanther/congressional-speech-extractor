@@ -45,10 +45,11 @@ public class CongressionalSpeechExtractor {
 						break;
 					}
 
+					//Weird bullets weren't spoken somehow https://www.congress.gov/crec/2016/12/30/CREC-2016-12-30.pdf
 					//Weird "∑ " bullet points
-					if(line.matches("^∑ .*")){
-						line = line.substring(2, line.length());
-					}
+//					if(line.matches("^∑ .*")){
+//						line = line.substring(2, line.length());
+//					}
 					
 					//	<0x0c> \f	unreadable form feed character cleanup
 					if(line.matches("^\f.*")){
@@ -56,11 +57,12 @@ public class CongressionalSpeechExtractor {
 					}
 					
 					if(	   line.isEmpty()
-						|| (isUpperCase(line) && !line.matches("(?i:^PO 0\\d*.*)") && !line.matches("(?i:NOMINATIONS.*)"))
+						|| (isUpperCase(line) && !line.matches("(?i:^PO 0\\d*.*)") && !line.matches("NOMINATIONS.*"))
 						|| line.matches("(?i:^(?:January|February|March|April|May|June|July|August|September|October|November|December) \\d.*)")		//any date not caught with VerDate
 						|| line.matches("(?i:^(?:Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday), .*)")		//any date not caught with VerDate
 						|| line.matches("(?i:.*CONGRESSIONAL RECORD.*)")		//CONGRESSIONAL RECORD		anywhere in a line
 						|| line.matches("(?i:.*CONG-REC-ONLINE.*)")
+						|| line.matches("(?i:.*DSK4SPTVN1PROD.*)")		//SSpencer on DSK4SPTVN1PROD with HOUSE
 						){
 						continue;
 					}
@@ -72,10 +74,12 @@ public class CongressionalSpeechExtractor {
 							//concat next line in case long name and state
 							line += " " + reader.readLine();
 							j++;
-							String restOfLine = line.substring(regexMatch.group(1).length()+3);	//" of" = 3 characters
+							//regexMatch.group(1) is usually speakerName
+							String restOfLine = line.substring(regexMatch.group(1).length()+3);		//" of" = 3 characters
 							int periodIndex = restOfLine.indexOf(".");
 							int commaIndex = restOfLine.indexOf(",");
-							if(periodIndex < commaIndex){
+							int colonIndex = restOfLine.indexOf(":");		//Mrs. MILLER of Michigan: Committee on
+							if(colonIndex==-1 && periodIndex < commaIndex){
 								speakerName = regexMatch.group(1) + " of " + extractState(restOfLine);
 								titleDetected = true;
 							}
@@ -103,7 +107,10 @@ public class CongressionalSpeechExtractor {
 						|| line.matches("(?i:MAJORITY LEADER.*)")
 						|| line.matches("(?i:MINORITY LEADER.*)")
 						|| line.matches("(?i:MAJORITY WHIP.*)")
-						|| line.matches("(?i:NOMINATIONS.*)")
+						|| line.matches("NOMINATIONS.*")
+						|| line.matches("Committee on \\w+.*")	//not perfect, cuts of valid speeches of lines starting with "Committee on "
+						//|| line.matches("Committee on \\w+\\.")
+						|| line.matches("^∑ .*")
 						|| line.matches("(?i:AMENDMENT OFFERED BY.*)")){
 						specialTermination = true;
 					}
