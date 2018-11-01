@@ -56,7 +56,7 @@ public class CongressionalSpeechExtractor {
 					}
 					
 					if(	   line.isEmpty()
-						|| (isUpperCase(line) && !line.matches("(?i:^PO 0\\d*.*)"))
+						|| (isUpperCase(line) && !line.matches("(?i:^PO 0\\d*.*)") && !line.matches("(?i:NOMINATIONS.*)"))
 						|| line.matches("(?i:^(?:January|February|March|April|May|June|July|August|September|October|November|December) \\d.*)")		//any date not caught with VerDate
 						|| line.matches("(?i:^(?:Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday), .*)")		//any date not caught with VerDate
 						|| line.matches("(?i:.*CONGRESSIONAL RECORD.*)")		//CONGRESSIONAL RECORD		anywhere in a line
@@ -68,15 +68,11 @@ public class CongressionalSpeechExtractor {
 					regexMatch = speakerNamePattern.matcher(line);
 					boolean titleDetected=false;
 					if(regexMatch.find()){
-						
-						
-						
-
 						if(regexMatch.group(2) != null){	//2nd capture group is optional "of"
 							//concat next line in case long name and state
 							line += " " + reader.readLine();
 							j++;
-							String restOfLine = line.substring(speakerName.length()+3);	//" of" = 3 characters
+							String restOfLine = line.substring(regexMatch.group(1).length()+3);	//" of" = 3 characters
 							int periodIndex = restOfLine.indexOf(".");
 							int commaIndex = restOfLine.indexOf(",");
 							if(periodIndex < commaIndex){
@@ -107,6 +103,7 @@ public class CongressionalSpeechExtractor {
 						|| line.matches("(?i:MAJORITY LEADER.*)")
 						|| line.matches("(?i:MINORITY LEADER.*)")
 						|| line.matches("(?i:MAJORITY WHIP.*)")
+						|| line.matches("(?i:NOMINATIONS.*)")
 						|| line.matches("(?i:AMENDMENT OFFERED BY.*)")){
 						specialTermination = true;
 					}
