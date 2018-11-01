@@ -39,9 +39,15 @@ public class CongressionalSpeechExtractor {
 				String line = reader.readLine();	//assume 1st 2 lines are skippable & 2 lines exist
 				int j=1;		//line numbers start from 1
 				for(; line != null; line=reader.readLine(), j++){
+
+					//Weird "∑ " bullet points
+					if(line.matches("^∑ .*")){
+						line = line.substring(2, line.length());
+					}
+					
 					//	<0x0c> \f	unreadable form feed character cleanup
-					if(line.length()>=1 && line.substring(0,1).equals("\f")){
-						line=line.substring(1, line.length());
+					if(line.matches("^\f.*")){
+						line = line.substring(1, line.length());
 					}
 					
 					if(	   line.isEmpty()
@@ -170,7 +176,7 @@ public class CongressionalSpeechExtractor {
 	}
 
 	private static String leftPadNumber(int number){
-		return leftPadNumber(number, 4);
+		return leftPadNumber(number, 5);
 	}
 	private static String leftPadNumber(int number, int desiredLength){
 		int numPaddingZeros = desiredLength - (number+"").length();
