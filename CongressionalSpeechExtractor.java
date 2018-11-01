@@ -39,6 +39,11 @@ public class CongressionalSpeechExtractor {
 				String line = reader.readLine();	//assume 1st 2 lines are skippable & 2 lines exist
 				int j=1;		//line numbers start from 1
 				for(; line != null; line=reader.readLine(), j++){
+					if(line.matches("Daily Digest")){
+						allSpeechesForDay.append(speech.toString());	//like printing
+						speech.setLength(0);
+						break;
+					}
 
 					//Weird "∑ " bullet points
 					if(line.matches("^∑ .*")){
@@ -53,6 +58,8 @@ public class CongressionalSpeechExtractor {
 					if(	   line.isEmpty()
 						|| (isUpperCase(line) && !line.matches("(?i:^PO 0\\d*.*)"))
 						|| line.matches("(?i:^(?:January|February|March|April|May|June|July|August|September|October|November|December) \\d.*)")		//any date not caught with VerDate
+						|| line.matches("(?i:^(?:Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday), .*)")		//any date not caught with VerDate
+						|| line.matches("(?i:.*CONGRESSIONAL RECORD.*)")		//CONGRESSIONAL RECORD		anywhere in a line
 						|| line.matches("(?i:.*CONG-REC-ONLINE.*)")
 						){
 						continue;
@@ -72,7 +79,7 @@ public class CongressionalSpeechExtractor {
 						}
 					}
 					
-					if(	   line.matches("f")	//strange horizontal diamon in PDF
+					if(	   line.matches("f")	//strange horizontal diamond in PDF
 						|| line.matches("(?i:The Clerk read.*)")
 						|| line.matches("(?i:^The *CLERK\\..*)")
 						|| line.matches("(?i:The SPEAKER\\..*)")
@@ -88,7 +95,7 @@ public class CongressionalSpeechExtractor {
 						specialTermination = true;
 					}
 					if(speechStarted && (titleDetected || specialTermination)){	//speech ended, write to file
-						allSpeechesForDay.append(speech.toString());
+						allSpeechesForDay.append(speech.toString());	//like printing
 						speech.setLength(0);
 						speechStarted = false;
 					}
@@ -97,7 +104,7 @@ public class CongressionalSpeechExtractor {
 					if(titleDetected){	//end current speech & start new
 						speechStarted = true;
 						speechCount++;
-						speech.append("\n\tSpeech #"+CongressionalSpeechExtractor.leftPadNumber(speechCount) + " " + speakerName +"\n");
+						speech.append("\n\t"+date+" Speech #"+CongressionalSpeechExtractor.leftPadNumber(speechCount) + " " + speakerName +"\n");
 						speech.append(line+"\n");
 						// speech.append(j+": "+line+"\n");
 					}
