@@ -150,7 +150,7 @@ public class CongressionalSpeechExtractor {
 
 				}
 				
-				System.out.println("Done");
+				System.out.println(date + " " + speechCount +" speeches");
 				CongressionalSpeechExtractor.writeToFile(writer, folder + "/" + date+".txt", allSpeechesForDay.toString());
 
 			} catch (FileNotFoundException e) {
