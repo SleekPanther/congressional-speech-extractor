@@ -45,11 +45,10 @@ public class CongressionalSpeechExtractor {
 						break;
 					}
 
-					//Weird bullets weren't spoken somehow https://www.congress.gov/crec/2016/12/30/CREC-2016-12-30.pdf
-					//Weird "∑ " bullet points
-//					if(line.matches("^∑ .*")){
-//						line = line.substring(2, line.length());
-//					}
+					//Weird "∑ " bullets weren't spoken but still count as speeches https://www.congress.gov/crec/2016/12/30/CREC-2016-12-30.pdf
+					if(line.matches("^∑ .*")){
+						line = line.substring(2, line.length());
+					}
 					
 					//	<0x0c> \f	unreadable form feed character cleanup
 					if(line.matches("^\f.*")){
