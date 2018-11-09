@@ -10,7 +10,12 @@ public class CongressionalSpeechExtractor {
 		final int FILENAME_EXTENSION_CHAR_COUNT = 4;	//".txt"
 		
 		Matcher regexMatch;
-		final Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) +[A-Z-]*(?: +[A-Z-]*)*)(?:(?:\\. )|( *[oO][fF]))");
+		final Pattern speakerNamePattern = Pattern.compile("^((?:(?:Mrs\\.)|(?:Ms\\.)|(?:Mr\\.)) +[A-Z-]*(?: [A-Z]\\.)*(?: +[A-Z-]*)*)(?:(?:\\. )|( *[oO][fF]))");
+		/*													1 |       honorific                |     2  | opt  initial|        3     |5  |period| |space "of"|
+		1=capture group for name & start of line
+		2=multiple last name
+		3=optional multiple last names (hyphen of 2nd last name also included though the trailing LAST-NAME- shouldn't exist)
+		4=capture group for of (period group is NON-capturing so 2 groups means there is a state coming) */
 
 
 		ArrayList<File> inputFiles = new ArrayList<File>(Arrays.asList(new File(INPUT_DIR).listFiles()));
@@ -22,16 +27,12 @@ public class CongressionalSpeechExtractor {
 				String rawFileName = inputFiles.get(i).getName(); 
 				String date = rawFileName .substring(NUM_FILENAME_PREFIX_CHARS, rawFileName.length() -FILENAME_EXTENSION_CHAR_COUNT);
 				
-				File folder = new File(OUTPUT_DIR + date);
-				if(!folder.exists()){
-					folder.mkdir();
-				}
-				
-				
-				StringBuilder allSpeechesForDay = new StringBuilder();
+				File folder = new File(OUTPUT_DIR + date);		//create folder name but don't make it unless there are speeches
+				// StringBuilder allSpeechesForDay = new StringBuilder();
 
 				int speechCount = 0;
 				String speakerName = "";
+				String outputFileName = "";
 				StringBuilder speech = new StringBuilder();
 				boolean speechStarted=false;
 				boolean specialTermination = false;
@@ -39,8 +40,9 @@ public class CongressionalSpeechExtractor {
 				String line = reader.readLine();	//assume 1st 2 lines are skippable & 2 lines exist
 				int j=1;		//line numbers start from 1
 				for(; line != null; line=reader.readLine(), j++){
-					if(line.matches("Daily Digest")){
-						allSpeechesForDay.append(speech.toString());	//like printing
+					if(line.matches("Daily Digest") && speechCount>0){
+						CongressionalSpeechExtractor.writeToFile(writer, folder + "/" + outputFileName, speech.toString());
+						// allSpeechesForDay.append(speech.toString());	//like printing
 						speech.setLength(0);
 						break;
 					}
@@ -61,7 +63,7 @@ public class CongressionalSpeechExtractor {
 						|| line.matches("(?i:^(?:Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday), .*)")		//any date not caught with VerDate
 						|| line.matches("(?i:.*CONGRESSIONAL RECORD.*)")		//CONGRESSIONAL RECORD		anywhere in a line
 						|| line.matches("(?i:.*CONG-REC-ONLINE.*)")
-						|| line.matches("(?i:.*DSK4SPTVN1PROD.*)")		//SSpencer on DSK4SPTVN1PROD with HOUSE
+						|| line.matches(".*DSK.{7}PROD.*")		//SSpencer on DSK4SPTVN1PROD with HOUSE
 						){
 						continue;
 					}
@@ -89,7 +91,8 @@ public class CongressionalSpeechExtractor {
 						}
 					}
 					
-					if(	   line.matches("f")	//strange horizontal diamond in PDF
+					if(	!titleDetected &&
+					   	(	line.matches("f")	//strange horizontal diamond in PDF
 						|| line.matches("(?i:The Clerk read.*)")
 						|| line.matches("(?i:^The *CLERK\\..*)")
 						|| line.matches("(?i:The SPEAKER\\..*)")
@@ -110,11 +113,14 @@ public class CongressionalSpeechExtractor {
 						|| line.matches("Committee on \\w+.*")	//not perfect, cuts of valid speeches of lines starting with "Committee on "
 						//|| line.matches("Committee on \\w+\\.")
 						|| line.matches("^∑ .*")
-						|| line.matches("(?i:AMENDMENT OFFERED BY.*)")){
+						|| line.matches("(?i:AMENDMENT OFFERED BY.*)")
+						)
+						){
 						specialTermination = true;
 					}
 					if(speechStarted && (titleDetected || specialTermination)){	//speech ended, write to file
-						allSpeechesForDay.append(speech.toString());	//like printing
+						CongressionalSpeechExtractor.writeToFile(writer, folder + "/" + outputFileName, speech.toString());
+						// allSpeechesForDay.append(speech.toString());	//like printing
 						speech.setLength(0);
 						speechStarted = false;
 					}
@@ -123,9 +129,14 @@ public class CongressionalSpeechExtractor {
 					if(titleDetected){	//end current speech & start new
 						speechStarted = true;
 						speechCount++;
-						speech.append("\n\t"+date+" Speech #"+CongressionalSpeechExtractor.leftPadNumber(speechCount) + " " + speakerName +"\n");
+						if(speechCount==1){
+							if(!folder.exists()){
+								folder.mkdir();
+							}
+						}
+						outputFileName = date+" Speech #"+CongressionalSpeechExtractor.leftPadNumber(speechCount) + " " + speakerName +".txt";
+						// speech.append("\n\t"+outputFileName +"\n");
 						speech.append(line+"\n");
-						// speech.append(j+": "+line+"\n");
 					}
 					else if(speechStarted){
 						if(line.matches("(?i:^VerDate.*)")){
@@ -144,14 +155,17 @@ public class CongressionalSpeechExtractor {
 						}
 						else {	//normal line
 							speech.append(line+"\n");
-							// speech.append(j+": "+line+"\n");
 						}
 					}
 
 				}
 				
 				System.out.println(date + " " + speechCount +" speeches");
-				CongressionalSpeechExtractor.writeToFile(writer, folder + "/" + date+".txt", allSpeechesForDay.toString());
+				// CongressionalSpeechExtractor.writeToFile(writer, folder + "/" + date+".txt", allSpeechesForDay.toString());
+				
+				File newDir = new File(folder.getParent() + "/" + folder.getName() + " Speech Count = " + speechCount);
+				folder.renameTo(newDir);
+				
 
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
